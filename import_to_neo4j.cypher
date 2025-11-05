@@ -12,8 +12,8 @@ FOR (f:Food) REQUIRE f.fdcId IS UNIQUE;
 CREATE CONSTRAINT nutrient_id IF NOT EXISTS
 FOR (n:Nutrient) REQUIRE n.id IS UNIQUE;
 
-CREATE CONSTRAINT category_id IF NOT EXISTS
-FOR (c:FoodCategory) REQUIRE c.id IS UNIQUE;
+CREATE CONSTRAINT category_description IF NOT EXISTS
+FOR (c:FoodCategory) REQUIRE c.description IS UNIQUE;
 
 CREATE INDEX food_description IF NOT EXISTS
 FOR (f:Food) ON (f.description);
@@ -32,11 +32,8 @@ FOR (n:Nutrient) ON (n.name);
 CALL apoc.load.jsonArray('file:///FoodData_Central_foundation_food_json_2025-04-24.json', '$.FoundationFoods')
 YIELD value AS food
 
-// Create or merge Food Category
-MERGE (fc:FoodCategory {id: food.foodCategory.id})
-ON CREATE SET
-  fc.code = food.foodCategory.code,
-  fc.description = food.foodCategory.description
+// Create or merge Food Category (using description as unique identifier)
+MERGE (fc:FoodCategory {description: food.foodCategory.description})
 
 // Create Food node
 CREATE (f:Food {fdcId: food.fdcId})

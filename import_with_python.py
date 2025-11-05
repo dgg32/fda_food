@@ -27,6 +27,29 @@ class FoodDataImporter:
     def close(self):
         self.driver.close()
 
+    def cleanup_database(self):
+        """Clean up existing data and constraints"""
+        print("Cleaning up existing data...")
+
+        with self.driver.session() as session:
+            # Delete all relationships
+            session.run("MATCH ()-[r]->() DELETE r")
+
+            # Delete all nodes
+            session.run("MATCH (n) DELETE n")
+
+            # Drop old constraints
+            session.run("DROP CONSTRAINT food_fdc_id IF EXISTS")
+            session.run("DROP CONSTRAINT nutrient_id IF EXISTS")
+            session.run("DROP CONSTRAINT category_description IF EXISTS")
+            session.run("DROP CONSTRAINT category_id IF EXISTS")  # Drop old incorrect constraint
+
+            # Drop indexes
+            session.run("DROP INDEX food_description IF EXISTS")
+            session.run("DROP INDEX nutrient_name IF EXISTS")
+
+        print("✓ Database cleaned")
+
     def create_constraints_and_indexes(self):
         """Create database constraints and indexes"""
         print("Creating constraints and indexes...")
@@ -42,8 +65,8 @@ class FoodDataImporter:
                 "FOR (n:Nutrient) REQUIRE n.id IS UNIQUE"
             )
             session.run(
-                "CREATE CONSTRAINT category_id IF NOT EXISTS "
-                "FOR (c:FoodCategory) REQUIRE c.id IS UNIQUE"
+                "CREATE CONSTRAINT category_description IF NOT EXISTS "
+                "FOR (c:FoodCategory) REQUIRE c.description IS UNIQUE"
             )
 
             # Indexes
@@ -107,11 +130,8 @@ class FoodDataImporter:
                 session.run("""
                     UNWIND $foods AS food
 
-                    // Create or merge Food Category
-                    MERGE (fc:FoodCategory {id: food.foodCategory.id})
-                    ON CREATE SET
-                        fc.code = food.foodCategory.code,
-                        fc.description = food.foodCategory.description
+                    // Create or merge Food Category (using description as unique identifier)
+                    MERGE (fc:FoodCategory {description: food.foodCategory.description})
 
                     // Create Food node
                     CREATE (f:Food {fdcId: food.fdcId})
@@ -206,7 +226,7 @@ class FoodDataImporter:
             print(f"Category Relationships:   {category_rels:,}")
             print("="*50)
 
-    def run_import(self, json_file: str):
+    def run_import(self, json_file: str, cleanup: bool = True):
         """Run the complete import process"""
         start_time = time.time()
 
@@ -218,6 +238,10 @@ class FoodDataImporter:
             # Load data
             data = self.load_json_data(json_file)
             foods = data['FoundationFoods']
+
+            # Cleanup if requested
+            if cleanup:
+                self.cleanup_database()
 
             # Create schema
             self.create_constraints_and_indexes()

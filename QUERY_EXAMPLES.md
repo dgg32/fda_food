@@ -7,7 +7,7 @@
 #### View all food categories
 ```cypher
 MATCH (fc:FoodCategory)
-RETURN fc.description AS Category, fc.code AS Code
+RETURN fc.description AS Category
 ORDER BY fc.description;
 ```
 

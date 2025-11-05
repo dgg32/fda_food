@@ -6,7 +6,7 @@ This repository contains scripts to import FoodData Central foundation foods int
 
 ### Nodes
 - **Food**: Individual food items with properties like `fdcId`, `description`, `foodClass`
-- **FoodCategory**: Food categories with `id`, `code`, and `description`
+- **FoodCategory**: Food categories with `description` (19 unique categories)
 - **Nutrient**: Nutrients with `id`, `name`, `number`, `unitName`, and `rank`
 
 ### Relationships
@@ -138,7 +138,7 @@ ORDER BY rp.amount DESC;
 ### 7. Get all food categories
 ```cypher
 MATCH (fc:FoodCategory)
-RETURN fc.description AS Category, fc.code AS Code, fc.id AS ID
+RETURN fc.description AS Category
 ORDER BY fc.description;
 ```
 
